@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Rush - Grade 6 Full Syllabus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            width: 95%;
+            max-width: 700px;
+            padding: 2rem;
+            text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .timer-bar {
+            height: 8px;
+            background: #edf2f7;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        #timer-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .lesson-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .lesson-btn {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            text-align: left;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .lesson-btn:hover {
+            border-color: #4facfe;
+            background: #ebf8ff;
+            transform: translateY(-2px);
+        }
+
+        .option-btn {
+            transition: all 0.15s;
+        }
+
+        .option-btn:active { transform: scale(0.95); }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="glass-card" id="game-container">
+        <!-- Lesson Selection Screen -->
+        <div id="lesson-screen">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">ගණිතය අත්වැල 🎓</h1>
+            <p class="text-blue-500 font-semibold mb-6">6 ශ්‍රේණිය - පෙළපොතේ පාඩම් මාලාව</p>
+            
+            <div class="lesson-grid" id="lesson-list">
+                <!-- Lessons will be generated here -->
+            </div>
+
+            <div class="border-t pt-4 flex justify-between items-center">
+                <button onclick="showAdmin()" class="text-gray-500 text-xs hover:underline italic">⚙️ ප්‍රශ්න සංස්කරණය</button>
+                <span class="text-[10px] text-gray-400">Version 3.1</span>
+            </div>
+        </div>
+
+        <!-- Admin Screen -->
+        <div id="admin-screen" class="hidden text-left">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">ප්‍රශ්න පත්‍ර සංස්කාරකය</h2>
+                <button onclick="hideAdmin()" class="text-gray-400 hover:text-red-500 font-bold text-2xl">×</button>
+            </div>
+            
+            <label class="block text-sm font-semibold text-gray-600 mb-1">පාඩම තෝරන්න:</label>
+            <select id="edit-lesson-select" onchange="loadLessonToEdit()" class="w-full p-2 border rounded-lg mb-4 outline-none focus:border-blue-500">
+            </select>
+
+            <label class="block text-sm font-semibold text-gray-600 mb-1">ප්‍රශ්න ලැයිස්තුව (ප්‍රශ්නය,පිළිතුර):</label>
+            <textarea id="edit-area" class="w-full h-40 p-3 border rounded-xl font-mono text-xs mb-4 outline-none focus:border-blue-500" placeholder="ප්‍රශ්නය,පිළිතුර"></textarea>
+            
+            <div class="flex gap-2">
+                <button onclick="saveLessonData()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold">සුරකින්න</button>
+                <button onclick="resetCurrentLesson()" class="bg-gray-100 text-gray-600 py-2 px-3 rounded-lg text-xs font-bold">මුල් තත්වයට</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <div class="flex justify-between items-center mb-2">
+                <button onclick="confirmExit()" class="text-gray-400 hover:text-red-500 font-bold text-sm">◀ නවත්වන්න</button>
+                <div class="text-blue-600 font-bold text-xs px-2 py-1 bg-blue-50 rounded-full" id="current-lesson-name">පාඩම</div>
+            </div>
+            <div class="flex justify-between items-center mb-2 text-xs font-bold text-gray-400">
+                <span>ලකුණු: <span id="score" class="text-blue-600">0</span></span>
+                <span>ප්‍රශ්නය: <span id="q-count">0</span></span>
+            </div>
+            <div class="timer-bar"><div id="timer-progress"></div></div>
+            <div id="question" class="text-xl md:text-2xl font-bold text-gray-800 my-10 min-h-[80px] flex items-center justify-center px-4 leading-relaxed">---</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="options-container"></div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden">
+            <div class="text-6xl mb-4" id="result-emoji">🎉</div>
+            <h2 class="text-3xl font-bold mb-2 text-gray-800" id="result-title">හරිම දක්ෂයි!</h2>
+            <p class="text-gray-500 mb-8">නිවැරදි පිළිතුරු සංඛ්‍යාව: <span id="final-score" class="font-bold text-blue-600 text-xl">0</span></p>
+            <button onclick="showLessonScreen()" class="bg-blue-600 text-white font-bold py-3 px-10 rounded-full shadow-lg hover:bg-blue-700 transition-all">ප්‍රධාන මෙනුවට</button>
+        </div>
+    </div>
+
+    <script>
+        const defaultLessons = [
+            { id: 'circles', name: '01. වෘත්ත', data: `වෘත්තාකාර හැඩයක් දැකිය හැකි පිළිතුර තෝරන්න,රබාන\nවෘත්තය කියකට බෙදන්න පුලුවන්ද,8‍‍‍‍\n` },
+            { id: 'place_value', name: '02. ස්ථානීය අගය', data: `4567 හි 5 හි ස්ථානීය අගය?,500\n12345 හි 2 හි ස්ථානය කුමක්ද?,දහස් ස්ථානය\nමිලියනයට බින්දු කීයක් තිබේද?,6\nලක්ෂයේ ස්ථානයේ අගය 4 නම් එහි අගය?,400000\n980 හි 8 හි ස්ථානීය අගය?,80` },
+            { id: 'operations', name: '03. පූර්ණ සංඛ්‍යා ක්‍රියා', data: `125 + 75 හි අගය?,200\n500 - 125 හි අගය?,375\n12 x 5 හි අගය?,60\n45 / 9 හි අගය?,5\n25 + 25 + 25?,75` },
+            { id: 'time', name: '04. කාලය', data: `මිනිත්තු 1 කට තත්පර කීයද?,60\nපැය 1 කට මිනිත්තු කීයද?,60\nදිනක පැය ගණන කීයද?,24\nපැය 2 කට මිනිත්තු කීයද?,120\nවසරකට මාස කීයද?,12` },
+            { id: 'number_line', name: '05. සංඛ්‍යා රේඛාව', data: `0 ට වම්පසින් ඇත්තේ මොනවාද?,සෘණ සංඛ්‍යා\n-2 සහ 2 අතර ඇති සංඛ්‍යාව?,0\n-5 සහ -3 අතර ඇත්තේ?,-4\nසංඛ්‍යා රේඛාවක දකුණට යත්ම අගය?,වැඩි වේ\n0 ට වඩා 2 ක් අඩු සංඛ්‍යාව?,-2` },
+            { id: 'estimation', name: '06. නිමානය හා වැටයීම', data: `42 ලගම දහයට වටයන්න,40\n87 ලගම දහයට වටයන්න,90\n124 ලගම සියයට වටයන්න,100\n65 ලගම දහයට වටයන්න,70\n999 ලගම දහයට වටයන්න,1000` },
+            { id: 'angles', name: '07. කෝණ', data: `අංශක 90 කෝණය කුමක්ද?,සෘජු කෝණය\n90 ට වඩා අඩු කෝණය?,මුවහත් කෝණය\n90 ට වැඩි 180 ට අඩු කෝණය?,මහා කෝණය\nසෘජු කෝණ දෙකක එකතුව?,180\nත්‍රිකෝණයක කෝණ කීයක් තිබේද?,3` },
+            { id: 'directions', name: '08. දිශා', data: `ප්‍රධාන දිශා කීයක් තිබේද?,4\nඋතුර සහ නැගෙනහිර අතර දිශාව?,ඊශාන\nදකුණට විරුද්ධ දිශාව?,උතුර\nඉර පායන දිශාව?,නැගෙනහිර\nබස්නාහිර සහ දකුණ අතර දිශාව?,ගිනිකොණ` }
+        ];
+
+        let currentActiveQuestions = [];
+        let score = 0;
+        let currentIdx = 0;
+        let timer;
+        let timeLeft;
+        let maxTime = 20;
+
+        const STORAGE_PREFIX = 'math_rush_g6_final_';
+
+        window.onload = () => {
+            initApp();
+        };
+
+        function initApp() {
+            renderLessonList();
+            populateEditSelect();
+            showLessonScreen();
+        }
+
+        function renderLessonList() {
+            const list = document.getElementById('lesson-list');
+            list.innerHTML = '';
+            defaultLessons.forEach(l => {
+                const btn = document.createElement('button');
+                btn.className = 'lesson-btn';
+                btn.onclick = () => startLesson(l.id);
+                btn.innerHTML = `
+                    <span class="font-bold text-gray-700">${l.name}</span>
+                    <span class="text-blue-400">➔</span>
+                `;
+                list.appendChild(btn);
+            });
+        }
+
+        function populateEditSelect() {
+            const select = document.getElementById('edit-lesson-select');
+            select.innerHTML = '';
+            defaultLessons.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.innerText = l.name;
+                select.appendChild(opt);
+            });
+            loadLessonToEdit();
+        }
+
+        function loadLessonToEdit() {
+            const id = document.getElementById('edit-lesson-select').value;
+            const stored = localStorage.getItem(STORAGE_PREFIX + id);
+            const lesson = defaultLessons.find(x => x.id === id);
+            document.getElementById('edit-area').value = stored || lesson.data;
+        }
+
+        function saveLessonData() {
+            const id = document.getElementById('edit-lesson-select').value;
+            const data = document.getElementById('edit-area').value;
+            
+            try {
+                localStorage.setItem(STORAGE_PREFIX + id, data);
+                alert("සාර්ථකව සුරැකුණා! (Saved Successfully)");
+                // Refresh lists and go back
+                renderLessonList();
+                hideAdmin();
+            } catch (e) {
+                alert("දෝෂයක් සිදුවුණා: " + e.message);
+            }
+        }
+
+        function resetCurrentLesson() {
+            if(confirm("මෙම පාඩම මුල් තත්වයට පත් කිරීමට අවශ්‍යද?")) {
+                const id = document.getElementById('edit-lesson-select').value;
+                localStorage.removeItem(STORAGE_PREFIX + id);
+                loadLessonToEdit();
+                renderLessonList();
+            }
+        }
+
+        function startLesson(lessonId) {
+            const lesson = defaultLessons.find(l => l.id === lessonId);
+            const data = localStorage.getItem(STORAGE_PREFIX + lessonId) || lesson.data;
+            
+            const lines = data.trim().split('\n');
+            currentActiveQuestions = [];
+            lines.forEach(line => {
+                const p = line.split(',');
+                if(p.length === 2) currentActiveQuestions.push({ q: p[0].trim(), a: p[1].trim() });
+            });
+
+            if(currentActiveQuestions.length === 0) return alert("ප්‍රශ්න ඇතුළත් කර නැත.");
+
+            currentActiveQuestions.sort(() => Math.random() - 0.5);
+            score = 0;
+            currentIdx = 0;
+            
+            document.getElementById('current-lesson-name').innerText = lesson.name;
+            document.getElementById('lesson-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            clearInterval(timer);
+            if(currentIdx >= currentActiveQuestions.length) return endGame(true);
+
+            const q = currentActiveQuestions[currentIdx];
+            document.getElementById('question').innerText = q.q;
+            document.getElementById('score').innerText = score;
+            document.getElementById('q-count').innerText = (currentIdx + 1) + "/" + currentActiveQuestions.length;
+
+            timeLeft = 25;
+            maxTime = 25;
+            updateTimerBar();
+            generateOptions(q.a);
+            startTimer();
+        }
+
+        function generateOptions(correct) {
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            let opts = [correct];
+            let isNum = !isNaN(parseFloat(correct)) && !correct.includes('-') && !correct.includes('/');
+
+            while(opts.length < 4) {
+                let wrong;
+                if(isNum) {
+                    let val = parseFloat(correct);
+                    let offset = Math.floor(Math.random() * 20) - 10;
+                    wrong = (val + (offset === 0 ? 5 : offset)).toString();
+                    if(correct.includes('cm')) wrong += 'cm';
+                } else {
+                    const pool = ["සෘජු කෝණය", "උතුර", "60", "අරය", "100", "මුවහත් කෝණය", "-1", "කේන්ද්‍රය", "දකුණ", "180"];
+                    wrong = pool[Math.floor(Math.random()*pool.length)];
+                }
+                if(!opts.includes(wrong)) opts.push(wrong);
+            }
+
+            opts.sort(() => Math.random() - 0.5);
+            opts.forEach(o => {
+                const b = document.createElement('button');
+                b.className = 'option-btn bg-white border-2 border-gray-100 p-4 rounded-xl font-bold text-gray-700 hover:border-blue-500 hover:bg-blue-50 shadow-sm text-sm sm:text-base';
+                b.innerText = o;
+                b.onclick = () => checkAnswer(o, correct);
+                container.appendChild(b);
+            });
+        }
+
+        function checkAnswer(sel, cor) {
+            if(sel === cor) {
+                score++;
+                currentIdx++;
+                nextQuestion();
+            } else {
+                document.getElementById('game-container').classList.add('shake');
+                setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
+                endGame(false);
+            }
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft -= 0.1;
+                updateTimerBar();
+                if(timeLeft <= 0) endGame(false);
+            }, 100);
+        }
+
+        function updateTimerBar() {
+            document.getElementById('timer-progress').style.width = (timeLeft / maxTime * 100) + '%';
+        }
+
+        function endGame(won) {
+            clearInterval(timer);
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            
+            const title = document.getElementById('result-title');
+            const emoji = document.getElementById('result-emoji');
+            
+            if(won) {
+                title.innerText = "සියල්ල නිවැරදියි!";
+                emoji.innerText = "🏆";
+            } else {
+                title.innerText = "ක්‍රීඩාව අවසන්!";
+                emoji.innerText = "🎯";
+            }
+        }
+
+        function showLessonScreen() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('admin-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('lesson-screen').classList.remove('hidden');
+        }
+
+        function showAdmin() {
+            document.getElementById('lesson-screen').classList.add('hidden');
+            document.getElementById('admin-screen').classList.remove('hidden');
+            loadLessonToEdit();
+        }
+
+        function hideAdmin() {
+            document.getElementById('admin-screen').classList.add('hidden');
+            document.getElementById('lesson-screen').classList.remove('hidden');
+        }
+
+        function confirmExit() {
+            if(confirm("ඔබට ක්‍රීඩාවෙන් ඉවත් වීමට අවශ්‍යද?")) showLessonScreen();
+        }
+    </script>
+</body>
+</html>
